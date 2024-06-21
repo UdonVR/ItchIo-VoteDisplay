@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using System;
+using TMPro;
 using UdonSharp;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,42 +21,101 @@ public class VoteButton : UdonSharpBehaviour
 
     public float UpdateRate = 10f;
     private float retryTimer = 5f;
+
+    public GameObject voteDisplay;
+    public GameObject dateTimeDisplay;
+    public TextMeshProUGUI dateTimeText;
+    public TextMeshProUGUI voteButtonText;
+    public int votingStarts;
+    [HideInInspector]public DateTime votingStartsDateTime;
     
     void Start()
     {
         _TryUrl();
+        votingStartsDateTime = DateTimeOffset.FromUnixTimeSeconds(votingStarts).DateTime;
+        if (votingStartsDateTime <= DateTime.Now)
+        {
+            voteButtonText.text = "Vote";
+            dateTimeDisplay.SetActive(false);
+            voteDisplay.SetActive(true);
+            return;
+        }
+        
+        DateTime time = DateTimeOffset.FromUnixTimeSeconds(votingStarts).DateTime;
+        time = time.ToLocalTime();
+        string tmp = $"{time:MM}";
+        switch (tmp)
+        {
+            case "01":
+                tmp = "Jan";
+                break;
+            case "02":
+                tmp = "Feb";
+                break;
+            case "03":
+                tmp = "March";
+                break;
+            case "04":
+                tmp = "April";
+                break;
+            case "05":
+                tmp = "May";
+                break;
+            case "06":
+                tmp = "June";
+                break;
+            case "07":
+                tmp = "July";
+                break;
+            case "08":
+                tmp = "Aug";
+                break;
+            case "09":
+                tmp = "Sep";
+                break;
+            case "10":
+                tmp = "Oct";
+                break;
+            case "11":
+                tmp = "Nov";
+                break;
+            case "12":
+                tmp = "Dec";
+                break;
+        }
+        dateTimeText.text = $"Voting Begins:\n{tmp}, {time:dd}";
+        
     }
 
     public void _TryUrl()
     {
-        Debug.Log("_TryUrl");
         VRCStringDownloader.LoadUrl(apiKey, (IUdonEventReceiver)this);
     }
     
     public override void OnStringLoadError(IVRCStringDownload result)
     {
-        Debug.LogError("OnStringLoadError");
+        Debug.LogError("[VoteButton] OnStringLoadError");
         SendCustomEventDelayedSeconds(nameof(_TryUrl),retryTimer);
     }
 
     public override void OnStringLoadSuccess(IVRCStringDownload result)
     {
-        Debug.Log("OnStringLoadSuccess");
+        Debug.Log("[VoteButton] OnStringLoadSuccess");
         if (!(VRCJson.TryDeserializeFromJson(result.Result, out DataToken uwu)))
         {
-            Debug.LogError("Parse Fail_1");
+            Debug.LogError("[VoteButton] Parse Fail_1");
         }
         
         if (!(uwu.DataDictionary.TryGetValue("jam_games",out DataToken _games)))
         {
-            Debug.LogError("Parse Fail_2");
+            Debug.LogError("[VoteButton] Parse Fail_2");
         }
         
         for (int i = 0; i < _games.DataList.Count; i++)
         {
             if (!(_games.DataList.TryGetValue(i, out DataToken _game)))
             {
-                Debug.LogError("Parse Fail_3");
+                Debug.LogError("[VoteButton] Parse Fail_3");
                 continue;
             }
             
@@ -64,7 +124,7 @@ public class VoteButton : UdonSharpBehaviour
                 //Debug.Log(_id.Double);
                 if (_id.Double == submissionId)
                 {
-                    Debug.Log("Found ID Match");
+                    Debug.Log("[VoteButton] Found ID Match");
                     _Pull(_game);
                     break;
                 }
@@ -77,7 +137,7 @@ public class VoteButton : UdonSharpBehaviour
     {
         if (_foundGame.DataDictionary.TryGetValue("rating_count",out DataToken _rating_count))
         {
-            voteCount.text = $"Voters: {_rating_count.Double.ToString()}";
+            voteCount.text = $"{_rating_count.Double.ToString()}";
         }
         if (_foundGame.DataDictionary.TryGetValue("url",out DataToken _url))
         {
@@ -87,7 +147,7 @@ public class VoteButton : UdonSharpBehaviour
         {
             if (_game2.DataDictionary.TryGetValue("title",out DataToken _title))
             {
-                worldTitle.text = $"<size=10>Welcome To:</size>\n{_title.String}";
+                worldTitle.text = $"{_title.String}";
             }
         }
     }

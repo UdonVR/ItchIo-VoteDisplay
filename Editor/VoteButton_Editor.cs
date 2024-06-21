@@ -66,6 +66,52 @@ public class VoteButton_Editor : Editor
 
         DrawApiStuff();
         DrawAdvanceMode();
+        DateTime time = DateTimeOffset.FromUnixTimeSeconds(_script.votingStarts).DateTime;
+        time = time.ToLocalTime();
+        string tmp = $"{time:MM}";
+        switch (tmp)
+        {
+            case "01":
+                tmp = "Jan";
+                break;
+            case "02":
+                tmp = "Feb";
+                break;
+            case "03":
+                tmp = "March";
+                break;
+            case "04":
+                tmp = "April";
+                break;
+            case "05":
+                tmp = "May";
+                break;
+            case "06":
+                tmp = "June";
+                break;
+            case "07":
+                tmp = "July";
+                break;
+            case "08":
+                tmp = "Aug";
+                break;
+            case "09":
+                tmp = "Sep";
+                break;
+            case "10":
+                tmp = "Oct";
+                break;
+            case "11":
+                tmp = "Nov";
+                break;
+            case "12":
+                tmp = "Dec";
+                break;
+        }
+        _script.dateTimeText.text = $"Voting Begins:\n{tmp}, {time:dd}";
+        //_script.dateTimeText.text = $"{time}";
+
+        PrefabUtility.RecordPrefabInstancePropertyModifications(_script);
     }
 
     private void DrawAdvanceMode()
@@ -93,12 +139,14 @@ public class VoteButton_Editor : Editor
         if (hasLoaded)
         {
             EditorGUILayout.BeginHorizontal();
-                string[] popupStrings = new string[_jsonData.jam_games.Count];
-                string[] popupIds = new string[_jsonData.jam_games.Count];
-                for (int i = 0; i < popupStrings.Length; i++)
+                string[] popupStrings = new string[_jsonData.jam_games.Count + 1];
+                string[] popupIds = new string[_jsonData.jam_games.Count + 1];
+                popupStrings[0] = "-- NONE --";
+                popupIds[0] = "NONE";
+                for (int i = 1; i < popupStrings.Length; i++)
                 {
-                    popupStrings[i] = _jsonData.jam_games[i].game.title;
-                    popupIds[i] = _jsonData.jam_games[i].id.ToString();
+                    popupStrings[i] = _jsonData.jam_games[i - 1].game.title;
+                    popupIds[i] = _jsonData.jam_games[i - 1].id.ToString();
                 }
 
                 _o = Array.IndexOf(popupIds, _script.submissionId.ToString());
@@ -118,6 +166,15 @@ public class VoteButton_Editor : Editor
                 int _oo = EditorGUILayout.Popup(_o, popupStrings);
             EditorGUILayout.EndHorizontal();
 
+            if (_oo == 0)
+            {
+                _script.submissionId = 0;
+                _script.worldTitle.text = "--";
+                _script.voteCount.text = "--";
+                _script.urlField.text = "";
+                return;
+            }
+            _oo = _oo - 1;
             _script.submissionId = _jsonData.jam_games[_oo].id;
             if (_script.voteCount != null) _script.voteCount.text = _jsonData.jam_games[_oo].rating_count.ToString();
             if (_script.worldTitle != null) _script.worldTitle.text = _jsonData.jam_games[_oo].game.title;
